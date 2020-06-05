@@ -1,0 +1,115 @@
+#include "translate.h"
+
+#include <stddef.h>
+#include <stdlib.h>
+
+// Helper function for interpreting escapes. Given the character that
+// follows a backslash, returns the character that the combination
+// should be replaced with. Recognizes the seven standard C escapes, and
+// maps every other character to itself.
+char interpret_escape(char c)
+{
+    switch (c) {
+    case 'a': return '\a';
+    case 'b': return '\b';
+    case 'f': return '\f';
+    case 'n': return '\n';
+    case 'r': return '\r';
+    case 't': return '\t';
+    case 'v': return '\v';
+    default:  return c;
+    }
+}
+
+size_t charseq_length(const char* src)
+{
+    size_t result = 0;
+    size_t curr = 0;
+    while (src[curr] != 0){
+        
+        if (src[curr + 1] == '-' && src[curr + 2] != 0){
+            int start = src[curr];
+            int end = src[ curr + 2];
+            if (start > end){
+                return result;
+            }
+            
+            else {result += end - start + 1;
+                    curr += 3;}
+        }
+        else if (src[curr] == '\\'&& src [curr + 1] != 0){
+            result += 1;
+            curr += 2;
+        } else {
+            result += 1;
+            curr += 1;
+        }
+    }
+    return result;
+}
+
+
+char* expand_charseq(const char* src)
+{
+    char* result = malloc(charseq_length(src) + 1);
+    if (!result) return NULL;
+
+    char* dst    = result;
+    // char* rstart = 0;
+    size_t posSrc = 0;
+    size_t posDst = 0;
+
+    while (src[posSrc] != 0){
+      
+        if (src[posSrc + 1] == '-' && src[posSrc + 2] != 0){
+           int start = src[posSrc];
+           int end = src[posSrc + 2];
+           while (start <= end){
+               dst[posDst] = start;
+               posDst += 1;
+               start += 1;
+           }
+           posSrc += 3;
+           
+       }
+        else if (src[posSrc] == '\\' && src[posSrc + 1] != 0) {
+                dst[posDst] =  interpret_escape(src[posSrc + 1]);
+                posDst += 1;
+                posSrc += 2;
+        } else {
+            dst[posDst] = src[posSrc];
+            posSrc += 1;
+            posDst += 1;
+        }
+        
+    }
+    dst[posDst] = 0;
+    return result;        
+}
+
+
+char translate_char(char c, const char* from, const char* to)
+{
+    for(size_t posn = 0; from[posn] != '\0' ;++posn)
+    {
+        if (from[posn]== c){
+            return to[posn];
+            
+        }
+        
+    }
+  
+
+    return c;
+}
+
+void translate(char* s, const char* from, const char* to)
+{
+    for(size_t posn = 0; s[posn]!= 0;++ posn){
+        s[posn] =  translate_char(s[posn],from,to);
+        
+    }
+    
+}
+
+
